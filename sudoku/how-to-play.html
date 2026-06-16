@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7955768025744255" crossorigin="anonymous"></script>
+  <title>How to Play Sudoku — Rules &amp; Solving Techniques | Funduk Games</title>
+  <meta name="description" content="Learn how to play Sudoku: the rules plus core solving techniques — scanning, single candidates, naked and hidden pairs — to crack easy, medium and hard puzzles." />
+  <meta name="theme-color" content="#0f1226" />
+  <link rel="canonical" href="https://fundukgames.com/sudoku/how-to-play.html" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html"><span class="crown">🔢</span> Sudoku</a>
+    <nav class="nav">
+      <a href="../">All games</a>
+      <a href="play.html">Play</a>
+      <a href="how-to-play.html">How to play</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="section">
+      <h1>How to play Sudoku</h1>
+      <p>Sudoku is a logic puzzle on a 9×9 grid, divided into nine 3×3 boxes. The goal is simple; the
+      deduction is what makes it fun.</p>
+
+      <h2>The rule</h2>
+      <p>Fill the grid so that every <strong>row</strong>, every <strong>column</strong> and every
+      <strong>3×3 box</strong> contains the digits <strong>1 to 9</strong>, with no repeats. Some
+      digits are given to start — the rest you deduce. A proper Sudoku has exactly one solution and
+      never requires guessing.</p>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>Technique 1: Scanning</h2>
+      <p>Pick a digit and scan rows, columns and boxes where it already appears. Those lines block the
+      digit elsewhere. Often a box will have only one cell left where a given digit can legally go —
+      place it there.</p>
+
+      <h2>Technique 2: The last empty cell</h2>
+      <p>Whenever a row, column or box has eight cells filled, the ninth is forced — it's simply the
+      missing digit. Always finish off near-complete lines first.</p>
+
+      <h2>Technique 3: Single candidates</h2>
+      <p>For a tricky cell, list which digits are still legal there given its row, column and box. If
+      only one digit survives, it's forced. This "pencil-mark" approach is the backbone of medium and
+      hard solving.</p>
+
+      <h2>Technique 4: Naked and hidden pairs</h2>
+      <p>If two cells in the same line can only hold the same two digits, those digits are locked to
+      that pair — remove them as candidates from the rest of the line (a <em>naked pair</em>).
+      Conversely, if two digits can only fit in two cells of a line, those cells must hold them (a
+      <em>hidden pair</em>). Spotting pairs unlocks most hard boards.</p>
+
+      <h2>Tips</h2>
+      <ul>
+        <li>Start on <strong>Easy</strong> to drill scanning, then move to Medium and Hard.</li>
+        <li>Duplicate numbers are highlighted in red — use that to catch slips early.</li>
+        <li>Stuck? The <strong>Hint</strong> button reveals one correct cell.</li>
+      </ul>
+
+      <p style="margin-top:20px;"><a class="cta" href="play.html">▶ Play Sudoku</a></p>
+    </article>
+
+    <!-- AD SLOT -->
+    <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Sudoku — a <a href="../">Funduk Games</a> puzzle ·
+       <a href="index.html">Home</a> · <a href="play.html">Play</a> ·
+       <a href="../about.html">About</a> · <a href="../privacy.html">Privacy</a></p>
+    <p class="disclaimer">Sudoku is a classic public-domain logic puzzle. Funduk Games is independent and not affiliated with any other puzzle publisher.</p>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

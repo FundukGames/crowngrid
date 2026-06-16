@@ -57,6 +57,19 @@
 
     <!-- AD SLOT: paste your Google AdSense responsive unit here after approval -->
     <div class="ad-slot" id="ad-bottom">Ad space (728×90) — your AdSense unit goes here</div>
+
+    <div id="win-modal" class="modal" hidden>
+      <div class="modal__card">
+        <button class="modal__close" id="win-close" aria-label="Close">✕</button>
+        <h2 id="win-title">🎉 Solved!</h2>
+        <p id="win-sub"></p>
+        <div class="modal__actions">
+          <button class="btn btn--primary" id="win-new">↻ New puzzle</button>
+          <a class="btn" href="../sudoku/play.html">Try Sudoku 🔢 →</a>
+          <button class="btn" id="win-share">🔗 Share result</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <footer class="site-footer">

@@ -39,6 +39,7 @@
     const marks = p.givens.map((row) => row.slice()); // givens locked in
     state = { size: p.size, solution: p.solution, givens: p.givens, h: p.h, v: p.v, marks: marks, mode: mode, solved: false, elapsedMs: 0 };
     els.modeLabel.textContent = mode === "daily" ? "Daily Challenge · " + todayKey() : "Unlimited · " + p.size + "×" + p.size;
+    hideWinModal();
     buildBoard();
     setMessage("", "");
     els.timer.textContent = "0:00";
@@ -82,7 +83,9 @@
   function paintCell(r, c) {
     const cell = cellAt(r, c); if (!cell) return;
     const v = state.marks[r][c];
-    cell.textContent = v === EMPTY ? "" : GLYPH[v];
+    cell.classList.toggle("is-sun", v === SUN);
+    cell.classList.toggle("is-moon", v === MOON);
+    cell.textContent = "";
   }
 
   function onBoardClick(e) {
@@ -156,8 +159,21 @@
     if (!stats.best || elapsed < stats.best) stats.best = elapsed;
     LS.set("sm_solved", stats.solved); LS.set("sm_streak", stats.streak); LS.set("sm_lastDaily", stats.lastDaily); LS.set("sm_best", stats.best);
     renderStats();
-    setMessage("🎉 Solved in " + formatTime(elapsed) + "! Tap Share to brag.", "ok");
+    setMessage("🎉 Solved in " + formatTime(elapsed) + "!", "ok");
+    showWinModal(elapsed);
   }
+
+  function showWinModal(elapsed) {
+    const modal = document.getElementById("win-modal");
+    if (!modal) return;
+    const sub = document.getElementById("win-sub");
+    const s = loadStats();
+    let txt = "Solved in " + formatTime(elapsed);
+    if (state.mode === "daily" && s.streak > 0) txt += " · 🔥 " + s.streak + " day streak";
+    if (sub) sub.textContent = txt;
+    modal.hidden = false;
+  }
+  function hideWinModal() { const m = document.getElementById("win-modal"); if (m) m.hidden = true; }
 
   function hint() {
     if (state.solved) return;
@@ -222,6 +238,13 @@
     document.getElementById("btn-hint").addEventListener("click", hint);
     document.getElementById("btn-clear").addEventListener("click", clearBoard);
     document.getElementById("btn-share").addEventListener("click", shareResult);
+
+    const winNew = document.getElementById("win-new");
+    if (winNew) winNew.addEventListener("click", () => newGame("unlimited"));
+    const winShare = document.getElementById("win-share");
+    if (winShare) winShare.addEventListener("click", shareResult);
+    const winClose = document.getElementById("win-close");
+    if (winClose) winClose.addEventListener("click", hideWinModal);
 
     newGame("unlimited");
   }

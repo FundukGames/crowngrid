@@ -5,19 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7955768025744255" crossorigin="anonymous"></script>
-  <title>Play CrownGrid — Unlimited Queens-Style Logic Puzzle (Free, No Login)</title>
-  <meta name="description" content="Play CrownGrid free: an unlimited crown-placement logic puzzle. No login, no daily limit. New random boards every click, plus a Daily Challenge with streaks." />
+  <title>Play Sudoku — Free Unlimited Sudoku (Easy, Medium, Hard, No Login)</title>
+  <meta name="description" content="Play free unlimited Sudoku in your browser — easy, medium and hard puzzles, a Daily Challenge with streaks, mistake highlighting and hints. No login required." />
   <meta name="theme-color" content="#0f1226" />
-  <link rel="canonical" href="https://fundukgames.com/crowngrid/play.html" />
+  <link rel="canonical" href="https://fundukgames.com/sudoku/play.html" />
   <link rel="stylesheet" href="../css/style.css" />
-  <!-- Open Graph -->
-  <meta property="og:title" content="Play CrownGrid — Unlimited Logic Puzzle" />
-  <meta property="og:description" content="Crown every region, row and column. Unlimited & free, no login." />
+  <meta property="og:title" content="Play Sudoku — Free &amp; Unlimited" />
+  <meta property="og:description" content="Easy to hard Sudoku, daily challenge, no login." />
   <meta property="og:type" content="website" />
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html"><span class="crown">♛</span> CrownGrid</a>
+    <a class="brand" href="index.html"><span class="crown">🔢</span> Sudoku</a>
     <nav class="nav">
       <a href="../">All games</a>
       <a href="play.html">Play</a>
@@ -29,7 +28,7 @@
   <main class="container">
     <section class="game-card">
       <div class="game-top">
-        <span id="mode-label">Unlimited · 8×8</span>
+        <span id="mode-label">Unlimited · easy</span>
         <span class="timer" id="timer">0:00</span>
       </div>
 
@@ -39,17 +38,31 @@
         <div class="stat"><b id="stat-best">—</b><span>Best time</span></div>
       </div>
 
-      <div id="board" class="board" aria-label="Puzzle board"></div>
+      <div id="board" class="su-board" aria-label="Sudoku board"></div>
+
+      <div id="pad" class="su-pad">
+        <button type="button" data-v="1">1</button>
+        <button type="button" data-v="2">2</button>
+        <button type="button" data-v="3">3</button>
+        <button type="button" data-v="4">4</button>
+        <button type="button" data-v="5">5</button>
+        <button type="button" data-v="6">6</button>
+        <button type="button" data-v="7">7</button>
+        <button type="button" data-v="8">8</button>
+        <button type="button" data-v="9">9</button>
+        <button type="button" data-v="0">⌫</button>
+      </div>
+
       <div id="message" class="message"></div>
 
       <div class="controls">
         <button class="btn btn--primary" id="btn-new">↻ New puzzle</button>
         <div class="size-wrap">
-          <label for="size-select">Size</label>
-          <select id="size-select" aria-label="Board size">
-            <option value="6">6×6 · Easy</option>
-            <option value="7">7×7 · Medium</option>
-            <option value="8" selected>8×8 · Hard</option>
+          <label for="diff-select">Level</label>
+          <select id="diff-select" aria-label="Difficulty">
+            <option value="easy" selected>Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
           </select>
         </div>
         <button class="btn" id="btn-daily">★ Daily</button>
@@ -60,11 +73,11 @@
     </section>
 
     <p style="text-align:center;color:#c2c7ee;font-size:.92rem;">
-      Tap a cell to cycle <b>✕</b> → <b>♛ crown</b> → empty. Each crown auto-fills the obvious
-      <b>✕</b> squares. <b>Drag</b> across cells to mark your own <b>✕</b> in bulk (drag again to erase).
+      Tap a cell, then tap a number (or use your keyboard <b>1–9</b>, <b>Backspace</b> to clear).
+      Fill every row, column and 3×3 box with 1–9.
     </p>
 
-    <!-- AD SLOT: paste your Google AdSense responsive unit here after approval -->
+    <!-- AD SLOT -->
     <div class="ad-slot" id="ad-bottom">Ad space (728×90) — your AdSense unit goes here</div>
 
     <div id="win-modal" class="modal" hidden>
@@ -74,7 +87,7 @@
         <p id="win-sub"></p>
         <div class="modal__actions">
           <button class="btn btn--primary" id="win-new">↻ New puzzle</button>
-          <a class="btn" href="../sunmoon/play.html">Try SunMoon ☀️🌙 →</a>
+          <a class="btn" href="../crowngrid/play.html">Try CrownGrid ♛ →</a>
           <button class="btn" id="win-share">🔗 Share result</button>
         </div>
       </div>
@@ -82,14 +95,10 @@
   </main>
 
   <footer class="site-footer">
-    <p>© <span id="year"></span> CrownGrid — a <a href="../">Funduk Games</a> puzzle ·
+    <p>© <span id="year"></span> Sudoku — a <a href="../">Funduk Games</a> puzzle ·
        <a href="index.html">Home</a> · <a href="how-to-play.html">How to play</a> ·
        <a href="../about.html">About</a> · <a href="../privacy.html">Privacy</a></p>
-    <p class="disclaimer">
-      CrownGrid is an independent puzzle game. It is not affiliated with, endorsed by, or sponsored
-      by LinkedIn Corporation, The New York Times Company, or any other puzzle publisher.
-      All names and trademarks belong to their respective owners.
-    </p>
+    <p class="disclaimer">Sudoku is a classic public-domain logic puzzle. Funduk Games is independent and not affiliated with any other puzzle publisher.</p>
   </footer>
 
   <script>document.getElementById("year").textContent = new Date().getFullYear();</script>

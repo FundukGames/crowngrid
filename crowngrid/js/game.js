@@ -95,6 +95,7 @@
     els.modeLabel.textContent = mode === "daily"
       ? "Daily Challenge · " + todayKey()
       : "Unlimited · " + size + "×" + size;
+    hideWinModal();
     buildBoard();
     setMessage("", "");
     els.timer.textContent = "0:00";
@@ -302,8 +303,21 @@
     LS.set("cg_lastDaily", stats.lastDaily);
     LS.set("cg_best", stats.best);
     renderStats();
-    setMessage("🎉 Solved in " + formatTime(elapsed) + "! Tap Share to brag.", "ok");
+    setMessage("🎉 Solved in " + formatTime(elapsed) + "!", "ok");
+    showWinModal(elapsed);
   }
+
+  function showWinModal(elapsed) {
+    const modal = document.getElementById("win-modal");
+    if (!modal) return;
+    const sub = document.getElementById("win-sub");
+    const s = loadStats();
+    let txt = "Solved in " + formatTime(elapsed);
+    if (state.mode === "daily" && s.streak > 0) txt += " · 🔥 " + s.streak + " day streak";
+    if (sub) sub.textContent = txt;
+    modal.hidden = false;
+  }
+  function hideWinModal() { const m = document.getElementById("win-modal"); if (m) m.hidden = true; }
 
   // ---- hint / clear ------------------------------------------------------
   function hint() {
@@ -422,6 +436,13 @@
     document.getElementById("size-select").addEventListener("change", () => {
       newGame("unlimited", +document.getElementById("size-select").value);
     });
+
+    const winNew = document.getElementById("win-new");
+    if (winNew) winNew.addEventListener("click", () => newGame("unlimited", +document.getElementById("size-select").value));
+    const winShare = document.getElementById("win-share");
+    if (winShare) winShare.addEventListener("click", shareResult);
+    const winClose = document.getElementById("win-close");
+    if (winClose) winClose.addEventListener("click", hideWinModal);
 
     newGame("unlimited", 8);
   }
