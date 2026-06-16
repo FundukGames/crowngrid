@@ -40,6 +40,7 @@
     state = { size: p.size, solution: p.solution, givens: p.givens, h: p.h, v: p.v, marks: marks, mode: mode, solved: false, elapsedMs: 0 };
     els.modeLabel.textContent = mode === "daily" ? "Daily Challenge · " + todayKey() : "Unlimited · " + p.size + "×" + p.size;
     hideWinModal();
+    cancelConflictTimer();
     buildBoard();
     setMessage("", "");
     els.timer.textContent = "0:00";
@@ -95,7 +96,7 @@
     if (state.givens[r][c] !== EMPTY) { flash(cell); return; } // locked
     state.marks[r][c] = state.marks[r][c] === EMPTY ? SUN : state.marks[r][c] === SUN ? MOON : EMPTY;
     paintCell(r, c);
-    clearConflicts();
+    scheduleConflicts();
     checkWin();
   }
 
@@ -135,9 +136,22 @@
       }
     return bad;
   }
-  function clearConflicts() {
+  // Conflict highlighting is debounced ~1s: old red marks clear instantly when
+  // you act, and "incorrect" cells only light up if you pause — so you're not
+  // told you're wrong on every single tap mid-solve.
+  let conflictTimer = null;
+  function clearConflictMarks() {
     els.board.querySelectorAll(".sm-cell.is-bad").forEach((c) => c.classList.remove("is-bad"));
+  }
+  function applyConflicts() {
+    clearConflictMarks();
     findConflicts().forEach((key) => { const [r, c] = key.split(","); const cell = cellAt(r, c); if (cell) cell.classList.add("is-bad"); });
+  }
+  function cancelConflictTimer() { if (conflictTimer) { clearTimeout(conflictTimer); conflictTimer = null; } }
+  function scheduleConflicts() {
+    clearConflictMarks();
+    cancelConflictTimer();
+    conflictTimer = setTimeout(applyConflicts, 1000);
   }
   function isFull() {
     for (let r = 0; r < state.size; r++) for (let c = 0; c < state.size; c++) if (state.marks[r][c] === EMPTY) return false;
@@ -150,6 +164,7 @@
   }
   function win() {
     state.solved = true; stopTimer();
+    cancelConflictTimer(); clearConflictMarks();
     const elapsed = Date.now() - state.startTs; state.elapsedMs = elapsed;
     const stats = loadStats(); stats.solved += 1;
     if (state.mode === "daily") {
@@ -188,7 +203,7 @@
       for (let c = 0; c < state.size; c++)
         if (state.marks[r][c] === EMPTY) {
           state.marks[r][c] = state.solution[r][c]; paintCell(r, c); flash(cellAt(r, c));
-          clearConflicts(); checkWin(); setMessage("Revealed one cell. Keep going!", ""); return;
+          scheduleConflicts(); checkWin(); setMessage("Revealed one cell. Keep going!", ""); return;
         }
   }
   function flash(cell) { if (!cell) return; cell.classList.add("flash"); setTimeout(() => cell.classList.remove("flash"), 900); }
@@ -198,7 +213,7 @@
     for (let r = 0; r < state.size; r++)
       for (let c = 0; c < state.size; c++)
         if (state.givens[r][c] === EMPTY) { state.marks[r][c] = EMPTY; paintCell(r, c); }
-    state.solved = false; clearConflicts(); setMessage("", ""); startTimer();
+    state.solved = false; cancelConflictTimer(); clearConflictMarks(); setMessage("", ""); startTimer();
   }
   function setMessage(text, kind) { els.message.textContent = text; els.message.className = "message" + (kind ? " message--" + kind : ""); }
 
