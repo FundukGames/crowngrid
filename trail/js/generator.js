@@ -1,5 +1,5 @@
 /*
- * Zip puzzle engine.
+ * Trail puzzle engine.
  * --------------------------------------------------------------------------
  * Draw one continuous path that fills EVERY cell exactly once, passing through
  * the numbered checkpoints 1, 2, 3 … in order (a Hamiltonian path with ordered
@@ -7,7 +7,7 @@
  * checkpoints on it, then adds just enough for the solution to be unique
  * (verified by a backtracking counter with a strong connectivity prune: a
  * single path can never cover disconnected unvisited regions). Framework-free;
- * attaches window.Zip.
+ * attaches window.Trail.
  */
 (function () {
   "use strict";
@@ -181,7 +181,7 @@
     return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate();
   }
 
-  window.Zip = window.Zip || {};
-  window.Zip.generate = generate;
-  window.Zip.dailySeed = dailySeed;
+  window.Trail = window.Trail || {};
+  window.Trail.generate = generate;
+  window.Trail.dailySeed = dailySeed;
 })();

@@ -1,5 +1,5 @@
 /*
- * Zip — game UI & interaction layer. Depends on generator.js (window.Zip).
+ * Trail — game UI & interaction layer. Depends on generator.js (window.Trail).
  * Draw one continuous path through every cell, visiting the numbers in order.
  * Press and drag across cells (mouse or touch); drag back to undo.
  */
@@ -18,7 +18,7 @@
   };
   function todayKey(date) { const d = date || new Date(); return d.getUTCFullYear() + "-" + (d.getUTCMonth() + 1) + "-" + d.getUTCDate(); }
   function yesterdayKey() { const d = new Date(); d.setUTCDate(d.getUTCDate() - 1); return todayKey(d); }
-  function loadStats() { return { solved: LS.get("zip_solved", 0), streak: LS.get("zip_streak", 0), lastDaily: LS.get("zip_lastDaily", null), best: LS.get("zip_best", {}) }; }
+  function loadStats() { return { solved: LS.get("trail_solved", 0), streak: LS.get("trail_streak", 0), lastDaily: LS.get("trail_lastDaily", null), best: LS.get("trail_best", {}) }; }
   function renderStats() {
     const s = loadStats();
     els.statSolved.textContent = s.solved;
@@ -33,9 +33,9 @@
   function newGame(mode, size) {
     size = size || 6;
     const opts = { size: size };
-    if (mode === "daily") { opts.seed = window.Zip.dailySeed(); opts.size = 6; size = 6; }
-    let p = window.Zip.generate(opts);
-    for (let i = 0; i < 5 && !p; i++) p = window.Zip.generate({ size: size });
+    if (mode === "daily") { opts.seed = window.Trail.dailySeed(); opts.size = 6; size = 6; }
+    let p = window.Trail.generate(opts);
+    for (let i = 0; i < 5 && !p; i++) p = window.Trail.generate({ size: size });
     state = { size: p.size, num: p.num, k: p.k, solution: p.path, path: [], mode: mode, solved: false, elapsedMs: 0 };
     els.modeLabel.textContent = mode === "daily" ? "Daily Challenge · " + todayKey() : "Unlimited · " + size + "×" + size;
     hideWinModal();
@@ -138,7 +138,7 @@
       if (stats.lastDaily !== tk) { stats.streak = (stats.lastDaily === yesterdayKey()) ? stats.streak + 1 : 1; stats.lastDaily = tk; }
     }
     if (!stats.best[state.size] || elapsed < stats.best[state.size]) stats.best[state.size] = elapsed;
-    LS.set("zip_solved", stats.solved); LS.set("zip_streak", stats.streak); LS.set("zip_lastDaily", stats.lastDaily); LS.set("zip_best", stats.best);
+    LS.set("trail_solved", stats.solved); LS.set("trail_streak", stats.streak); LS.set("trail_lastDaily", stats.lastDaily); LS.set("trail_best", stats.best);
     renderStats();
     setMessage("🎉 Solved in " + formatTime(elapsed) + "!", "ok");
     showWinModal(elapsed);
@@ -174,13 +174,13 @@
 
   function shareResult() {
     const base = location.origin + location.pathname.replace(/[^/]*$/, "");
-    const lines = ["🔗 Zip"];
+    const lines = ["🔗 Trail"];
     lines.push(state.mode === "daily" ? "Daily · " + todayKey() : "Unlimited · " + state.size + "×" + state.size);
     if (state.solved) { lines.push("✅ Solved in " + formatTime(state.elapsedMs) + " ⏱️"); const s = loadStats(); if (state.mode === "daily" && s.streak > 0) lines.push("🔥 Streak: " + s.streak); }
     else lines.push("Can you connect the dots? 🔗");
     lines.push(base);
     const text = lines.join("\n");
-    if (navigator.share) navigator.share({ title: "Zip", text: text }).catch(function () {});
+    if (navigator.share) navigator.share({ title: "Trail", text: text }).catch(function () {});
     else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { setMessage("📋 Result copied!", "ok"); }, function () { fallbackCopy(text); });
     else fallbackCopy(text);
   }
