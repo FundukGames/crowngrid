@@ -5,10 +5,10 @@
  *   - no three identical symbols are adjacent in a row or column,
  *   - each row and each column has equal numbers of ☀ and 🌙 (N/2 each),
  *   - "=" / "✕" edge clues between neighbors are satisfied (same / different).
- * Every generated board has exactly one logical solution.
  *
- * Framework-free; attaches window.SunMoon. Mechanics (rules) are not
- * copyrightable; the name and visuals here are original.
+ * Every generated board is solvable by PURE LOGIC (constraint propagation) —
+ * no guessing — which also makes the solution unique. Framework-free; attaches
+ * window.SunMoon. Mechanics (rules) are not copyrightable; name/visuals original.
  */
 (function () {
   "use strict";
@@ -36,7 +36,6 @@
     const grid = Array.from({ length: n }, () => new Array(n).fill(-1));
     const rowCnt = Array.from({ length: n }, () => [0, 0]);
     const colCnt = Array.from({ length: n }, () => [0, 0]);
-
     function bt(idx) {
       if (idx === n * n) return true;
       const r = (idx / n) | 0, c = idx % n;
@@ -54,66 +53,83 @@
     return bt(0) ? grid : null;
   }
 
-  // --- Count solutions (up to `limit`) for givens + edge clues ------------
-  // givens: n×n, -1 unknown else 0/1.  h[r][c]: clue between (r,c)&(r,c+1).
-  // v[r][c]: clue between (r,c)&(r+1,c).  clue: 0 none, 1 equal, 2 different.
-  function countSolutions(n, givens, h, v, limit) {
+  // --- Logic solver: fill only FORCED cells via constraint propagation -----
+  // Returns { grid, solved, contradiction }. "solved" means pure deduction
+  // (no guessing) filled the whole board.
+  function logicSolve(n, givens, h, v) {
     const half = n / 2;
-    // Fill row-major from empty; givens are forced values, validated incrementally
-    // against already-placed cells (so counts are never double-counted).
-    const grid = Array.from({ length: n }, () => new Array(n).fill(-1));
-    const rowCnt = Array.from({ length: n }, () => [0, 0]);
-    const colCnt = Array.from({ length: n }, () => [0, 0]);
+    const g = givens.map((row) => row.slice());
+    let contradiction = false, changed = true;
 
-    let count = 0;
-    function ok(r, c, val) {
-      if (rowCnt[r][val] === half) return false;
-      if (colCnt[c][val] === half) return false;
-      if (c >= 2 && grid[r][c - 1] === val && grid[r][c - 2] === val) return false;
-      if (r >= 2 && grid[r - 1][c] === val && grid[r - 2][c] === val) return false;
-      if (c >= 1 && h[r][c - 1] && grid[r][c - 1] !== -1) {
-        const same = grid[r][c - 1] === val;
-        if (h[r][c - 1] === 1 && !same) return false;
-        if (h[r][c - 1] === 2 && same) return false;
-      }
-      if (r >= 1 && v[r - 1][c] && grid[r - 1][c] !== -1) {
-        const same = grid[r - 1][c] === val;
-        if (v[r - 1][c] === 1 && !same) return false;
-        if (v[r - 1][c] === 2 && same) return false;
-      }
-      return true;
+    function set(r, c, val) {
+      if (g[r][c] === val) return;
+      if (g[r][c] !== -1) { contradiction = true; return; }
+      g[r][c] = val; changed = true;
     }
-    function bt(idx) {
-      if (count >= limit) return;
-      if (idx === n * n) { count++; return; }
-      const r = (idx / n) | 0, c = idx % n;
-      const g = givens[r][c];
-      if (g !== -1) {
-        if (ok(r, c, g)) { grid[r][c] = g; rowCnt[r][g]++; colCnt[c][g]++; bt(idx + 1); grid[r][c] = -1; rowCnt[r][g]--; colCnt[c][g]--; }
-        return;
+
+    while (changed && !contradiction) {
+      changed = false;
+
+      // Balance: a line that already has N/2 of one symbol forces the rest.
+      for (let r = 0; r < n && !contradiction; r++) {
+        let z = 0, o = 0;
+        for (let c = 0; c < n; c++) { if (g[r][c] === 0) z++; else if (g[r][c] === 1) o++; }
+        if (z > half || o > half) contradiction = true;
+        else if (z === half) for (let c = 0; c < n; c++) if (g[r][c] === -1) set(r, c, 1);
+        else if (o === half) for (let c = 0; c < n; c++) if (g[r][c] === -1) set(r, c, 0);
       }
-      for (let val = 0; val <= 1; val++) {
-        if (!ok(r, c, val)) continue;
-        grid[r][c] = val; rowCnt[r][val]++; colCnt[c][val]++;
-        bt(idx + 1);
-        grid[r][c] = -1; rowCnt[r][val]--; colCnt[c][val]--;
+      for (let c = 0; c < n && !contradiction; c++) {
+        let z = 0, o = 0;
+        for (let r = 0; r < n; r++) { if (g[r][c] === 0) z++; else if (g[r][c] === 1) o++; }
+        if (z > half || o > half) contradiction = true;
+        else if (z === half) for (let r = 0; r < n; r++) if (g[r][c] === -1) set(r, c, 1);
+        else if (o === half) for (let r = 0; r < n; r++) if (g[r][c] === -1) set(r, c, 0);
+      }
+
+      // No-three: in any run of 3, two equal knowns force the third opposite.
+      const triple = (a, b, cc) => {
+        // a,b,cc are [r,c] cells of three consecutive
+        const va = g[a[0]][a[1]], vb = g[b[0]][b[1]], vc = g[cc[0]][cc[1]];
+        if (va !== -1 && va === vb && vc === -1) set(cc[0], cc[1], 1 - va);       // A A _
+        else if (vb !== -1 && vb === vc && va === -1) set(a[0], a[1], 1 - vb);    // _ A A
+        else if (va !== -1 && va === vc && vb === -1) set(b[0], b[1], 1 - va);    // A _ A
+      };
+      for (let r = 0; r < n; r++) for (let c = 0; c + 2 < n; c++) triple([r, c], [r, c + 1], [r, c + 2]);
+      for (let c = 0; c < n; c++) for (let r = 0; r + 2 < n; r++) triple([r, c], [r + 1, c], [r + 2, c]);
+
+      // Edge clues: a known endpoint forces its partner.
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          if (c < n - 1 && h[r][c]) {
+            const a = g[r][c], b = g[r][c + 1], same = h[r][c] === 1;
+            if (a !== -1 && b === -1) set(r, c + 1, same ? a : 1 - a);
+            else if (b !== -1 && a === -1) set(r, c, same ? b : 1 - b);
+          }
+          if (r < n - 1 && v[r][c]) {
+            const a = g[r][c], b = g[r + 1][c], same = v[r][c] === 1;
+            if (a !== -1 && b === -1) set(r + 1, c, same ? a : 1 - a);
+            else if (b !== -1 && a === -1) set(r, c, same ? b : 1 - b);
+          }
+        }
       }
     }
-    bt(0);
-    return count;
+
+    let solved = !contradiction;
+    for (let r = 0; r < n && solved; r++) for (let c = 0; c < n; c++) if (g[r][c] === -1) { solved = false; break; }
+    return { grid: g, solved: solved, contradiction: contradiction };
   }
 
-  // --- Generate a uniquely solvable puzzle --------------------------------
+  // --- Generate a puzzle solvable by pure logic (hence unique) ------------
   function generate(opts) {
     opts = opts || {};
-    const n = (opts.size || 6) & ~1; // force even
+    const n = (opts.size || 6) & ~1; // even
     const rng = typeof opts.seed === "number" ? mulberry32(opts.seed) : Math.random;
 
     let sol = null;
-    for (let i = 0; i < 50 && !sol; i++) sol = makeSolution(n, rng);
+    for (let i = 0; i < 60 && !sol; i++) sol = makeSolution(n, rng);
     if (!sol) sol = makeSolution(n, Math.random);
 
-    // Start fully constrained (all givens + all edges) -> trivially unique.
+    // Start fully constrained (all givens + all edges) — trivially solvable.
     const givens = sol.map((row) => row.slice());
     const h = Array.from({ length: n }, () => new Array(n).fill(0));
     const v = Array.from({ length: n }, () => new Array(n).fill(0));
@@ -123,8 +139,8 @@
         if (r < n - 1) v[r][c] = sol[r][c] === sol[r + 1][c] ? 1 : 2;
       }
 
-    // Build a removal order: givens first (shuffled), then edges (shuffled),
-    // so the final puzzle keeps few givens and several =/✕ clues (authentic).
+    // Remove clues (givens first, then edges) while the board still solves by
+    // pure logic. Keeping logic-solvability guarantees a single, deducible path.
     const givenHandles = [];
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) givenHandles.push(["g", r, c]);
     const edgeHandles = [];
@@ -141,7 +157,7 @@
       else if (type === "h") { prev = h[r][c]; h[r][c] = 0; }
       else { prev = v[r][c]; v[r][c] = 0; }
 
-      if (countSolutions(n, givens, h, v, 2) !== 1) {
+      if (!logicSolve(n, givens, h, v).solved) {
         if (type === "g") givens[r][c] = prev;
         else if (type === "h") h[r][c] = prev;
         else v[r][c] = prev;
