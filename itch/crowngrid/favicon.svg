@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#f3e3c0"/>
+  <!-- stem -->
+  <rect x="30.5" y="10" width="3" height="7" rx="1.5" fill="#6f5a2a"/>
+  <!-- nut body -->
+  <path d="M32 21 C43 21 49 30 49 39 C49 50 41 58 32 58 C23 58 15 50 15 39 C15 30 21 21 32 21 Z" fill="#b06f33"/>
+  <path d="M32 21 C43 21 49 30 49 39 C49 50 41 58 32 58 C31 46 31 31 32 21 Z" fill="#92571f" opacity=".5"/>
+  <ellipse cx="25" cy="37" rx="5.5" ry="9" fill="#d39354" opacity=".55"/>
+  <!-- leafy cap -->
+  <path d="M14 27 C18 16 46 16 50 27 C46 28 44 25 40 27 C38 23 34 23 32 27 C30 23 26 25 24 27 C20 25 18 28 14 27 Z" fill="#7f8a3a"/>
+  <path d="M14 27 C18 16 46 16 50 27 C46 24 38 23 32 24 C26 23 18 24 14 27 Z" fill="#9aa64b"/>
+</svg>
