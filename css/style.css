@@ -186,9 +186,13 @@ a { color: #a9b1ff; }
   display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 .5px #c7cbe6;
   user-select: none; -webkit-user-select: none; }
 .su-cell.is-given { color: #1b1d2b; font-weight: 800; background: #eef0fb; cursor: default; }
-.su-cell.is-sel { background: #d8dcfb; }
-.su-cell.is-peer { background: #f0f1fb; }
-.su-cell.is-same { background: #c7e0ff; }
+/* peer (row/col/box) and same-number tints — defined before is-sel so the
+   selected cell always wins, then made visually distinct from each other. */
+.su-cell.is-peer { background: #d4ddf4; }
+.su-cell.is-same { background: #a7c8fb; }
+.su-cell.is-sel, .su-cell.is-sel.is-given {
+  background: #7d94ff; color: #fff;
+  outline: 3px solid var(--accent); outline-offset: -3px; position: relative; z-index: 1; }
 .su-cell.is-bad { color: #e74c3c; }
 /* thick 3×3 box separators */
 .su-cell[data-c="2"], .su-cell[data-c="5"] { box-shadow: inset 0 0 0 .5px #c7cbe6, inset -2px 0 0 0 #1b1d2b; }

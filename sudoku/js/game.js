@@ -77,6 +77,7 @@
     const br = r - (r % 3), bc = c - (c % 3);
     els.board.querySelectorAll(".su-cell").forEach((cell) => {
       const cr = +cell.dataset.r, cc = +cell.dataset.c;
+      if (cr === r && cc === c) return; // the selected cell gets is-sel only
       if (cr === r || cc === c || (cr >= br && cr < br + 3 && cc >= bc && cc < bc + 3)) cell.classList.add("is-peer");
       if (selVal && state.marks[cr][cc] === selVal) cell.classList.add("is-same");
     });

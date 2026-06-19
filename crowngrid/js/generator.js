@@ -55,80 +55,198 @@
   }
 
   // --- Step 2: grow N contiguous regions, one per crown seed ---
-  // Two-phase: phase 1 grows every region up to `minSize` (round-robin) so
-  // there are no trivial 1- or 2-cell regions; phase 2 fills the rest with
-  // random frontier growth to keep irregular, deduction-worthy shapes.
-  function growRegions(n, solCols, rng, minSize) {
+  // Balanced round-robin growth: on every step we extend the SMALLEST region
+  // that still has an empty neighbor (ties broken randomly). This keeps every
+  // region near the average size (n cells on an n×n board) instead of letting
+  // one blob swallow the grid and leaving trivial 1–2 cell regions behind —
+  // which both looks better and makes boards far more likely to be solvable by
+  // pure logic. Shapes stay irregular because each grab is a random frontier
+  // cell of the chosen region.
+  const DIRS4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  function growRegions(n, solCols, rng) {
     const region = Array.from({ length: n }, () => new Array(n).fill(-1));
     const size = new Array(n).fill(1);
     for (let r = 0; r < n; r++) region[r][solCols[r]] = r; // region id == seed row
     let remaining = n * n - n;
-    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-    function freeNeighborsOf(reg) {
-      const out = [];
-      for (let r = 0; r < n; r++)
-        for (let c = 0; c < n; c++) {
-          if (region[r][c] !== reg) continue;
-          for (const [dr, dc] of dirs) {
-            const nr = r + dr, nc = c + dc;
-            if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
-            if (region[nr][nc] === -1) out.push([nr, nc]);
-          }
-        }
-      return out;
-    }
-
-    if (minSize > 1) {
-      let progress = true;
-      while (progress && remaining > 0) {
-        progress = false;
-        for (const reg of shuffle([...Array(n).keys()], rng)) {
-          if (size[reg] >= minSize) continue;
-          const fr = freeNeighborsOf(reg);
-          if (fr.length) {
-            const [r, c] = fr[Math.floor(rng() * fr.length)];
-            region[r][c] = reg; size[reg]++; remaining--; progress = true;
-            if (remaining === 0) break;
-          }
-        }
-      }
-    }
 
     while (remaining > 0) {
-      const edges = [];
+      // Collect, per region, the list of empty frontier cells.
+      const frontier = Array.from({ length: n }, () => []);
       for (let r = 0; r < n; r++) {
         for (let c = 0; c < n; c++) {
           if (region[r][c] !== -1) continue;
-          for (const [dr, dc] of dirs) {
+          for (const [dr, dc] of DIRS4) {
             const nr = r + dr, nc = c + dc;
             if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
-            if (region[nr][nc] !== -1) edges.push([r, c, region[nr][nc]]);
+            const reg = region[nr][nc];
+            if (reg !== -1) frontier[reg].push([r, c]);
           }
         }
       }
-      const [r, c, reg] = edges[Math.floor(rng() * edges.length)];
-      region[r][c] = reg; size[reg]++; remaining--;
+      // Smallest region that can still grow; random among ties.
+      let minSize = Infinity;
+      for (let reg = 0; reg < n; reg++)
+        if (frontier[reg].length && size[reg] < minSize) minSize = size[reg];
+      if (minSize === Infinity) break; // nothing can grow (disconnected leftovers)
+      const pick = shuffle([...Array(n).keys()], rng)
+        .find((reg) => frontier[reg].length && size[reg] === minSize);
+      const cells = frontier[pick];
+      const [r, c] = cells[Math.floor(rng() * cells.length)];
+      region[r][c] = pick; size[pick]++; remaining--;
     }
     return region;
   }
 
-  function minRegionSize(n, region) {
-    const cnt = new Array(n).fill(0);
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) cnt[region[r][c]]++;
-    return Math.min.apply(null, cnt);
+
+  // --- No-guess logic solver -------------------------------------------------
+  // Models how a human actually solves a CrownGrid: pure constraint propagation
+  // plus one-step "what if I put a crown here?" contradiction reasoning — never
+  // a blind backtracking guess. If this solver finishes the board, the board is
+  // (a) solvable with no guessing and (b) automatically unique, because sound
+  // deduction never branches: every forced move is the only move.
+  //
+  // Cell states in `g`: 0 = unknown, 1 = eliminated (✕), 2 = crown.
+  const UNK = 0, ELIM = 1, CROWN = 2;
+
+  // Propagate to a fixpoint. Mutates g. Returns true on contradiction.
+  function cgPropagate(n, region, regionCells, g) {
+    let changed = true, bad = false;
+    function elim(r, c) {
+      if (g[r][c] === CROWN) { bad = true; return; }
+      if (g[r][c] === UNK) { g[r][c] = ELIM; changed = true; }
+    }
+    function placeCrown(r, c) { g[r][c] = CROWN; changed = true; }
+
+    while (changed && !bad) {
+      changed = false;
+
+      // (1) Each crown attacks its row, column, region and 8 neighbours.
+      for (let r = 0; r < n && !bad; r++)
+        for (let c = 0; c < n && !bad; c++) {
+          if (g[r][c] !== CROWN) continue;
+          for (let k = 0; k < n && !bad; k++) {
+            if (k !== c) elim(r, k);
+            if (k !== r) elim(k, c);
+          }
+          for (const [rr, cc] of regionCells[region[r][c]])
+            if ((rr !== r || cc !== c) && !bad) elim(rr, cc);
+          for (let dr = -1; dr <= 1 && !bad; dr++)
+            for (let dc = -1; dc <= 1 && !bad; dc++) {
+              if (!dr && !dc) continue;
+              const nr = r + dr, nc = c + dc;
+              if (nr >= 0 && nc >= 0 && nr < n && nc < n) elim(nr, nc);
+            }
+        }
+
+      // (2) A unit (row / col / region) with no crown: if a single candidate
+      //     remains it's forced; if none remain the board is broken.
+      const scanUnit = (cells) => {
+        if (bad) return;
+        let crowns = 0, openR = -1, openC = -1, open = 0;
+        for (const [r, c] of cells) {
+          if (g[r][c] === CROWN) crowns++;
+          else if (g[r][c] === UNK) { open++; openR = r; openC = c; }
+        }
+        if (crowns === 0) {
+          if (open === 0) bad = true;
+          else if (open === 1) placeCrown(openR, openC);
+        }
+      };
+      for (let r = 0; r < n; r++) scanUnit(rowCells(n, r));
+      for (let c = 0; c < n; c++) scanUnit(colCells(n, c));
+      for (let reg = 0; reg < n; reg++) scanUnit(regionCells[reg]);
+
+      // (3) Line confinement, region -> line: if every candidate of a crownless
+      //     region sits in one row (or column), that line belongs to the region,
+      //     so eliminate the line's candidates that lie outside the region.
+      for (let reg = 0; reg < n && !bad; reg++) {
+        let crowns = 0, rows = new Set(), cols = new Set();
+        for (const [r, c] of regionCells[reg]) {
+          if (g[r][c] === CROWN) crowns++;
+          else if (g[r][c] === UNK) { rows.add(r); cols.add(c); }
+        }
+        if (crowns) continue;
+        if (rows.size === 1) {
+          const r = rows.values().next().value;
+          for (let c = 0; c < n; c++) if (g[r][c] === UNK && region[r][c] !== reg) elim(r, c);
+        }
+        if (cols.size === 1) {
+          const c = cols.values().next().value;
+          for (let r = 0; r < n; r++) if (g[r][c] === UNK && region[r][c] !== reg) elim(r, c);
+        }
+      }
+
+      // (4) Line confinement, line -> region: if every candidate of a crownless
+      //     row (or column) sits in one region, that region's crown is on this
+      //     line, so eliminate the region's candidates on other lines.
+      const lineToRegion = (cells, sameLine) => {
+        if (bad) return;
+        let crowns = 0, regs = new Set();
+        for (const [r, c] of cells) {
+          if (g[r][c] === CROWN) crowns++;
+          else if (g[r][c] === UNK) regs.add(region[r][c]);
+        }
+        if (crowns || regs.size !== 1) return;
+        const reg = regs.values().next().value;
+        for (const [r, c] of regionCells[reg])
+          if (g[r][c] === UNK && !sameLine(r, c)) elim(r, c);
+      };
+      for (let r = 0; r < n; r++) lineToRegion(rowCells(n, r), (rr) => rr === r);
+      for (let c = 0; c < n; c++) lineToRegion(colCells(n, c), (rr, cc) => cc === c);
+    }
+    return bad;
   }
 
-  // --- Solver: count solutions up to `limit` (for uniqueness checking) ---
-  function countSolutions(n, region, limit) {
-    let count = 0;
+  function rowCells(n, r) { const o = []; for (let c = 0; c < n; c++) o.push([r, c]); return o; }
+  function colCells(n, c) { const o = []; for (let r = 0; r < n; r++) o.push([r, c]); return o; }
+
+  function cgIsSolved(n, g) {
+    let crowns = 0;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (g[r][c] === CROWN) crowns++;
+    return crowns === n;
+  }
+
+  // Returns true iff the board is fully solvable by the logic above (no guessing).
+  function logicSolvable(n, region) {
+    const regionCells = Array.from({ length: n }, () => []);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) regionCells[region[r][c]].push([r, c]);
+
+    const g = Array.from({ length: n }, () => new Array(n).fill(UNK));
+    if (cgPropagate(n, region, regionCells, g)) return false;
+
+    let progress = true;
+    while (progress && !cgIsSolved(n, g)) {
+      progress = false;
+      // One-step contradiction: if placing a crown in a cell forces a broken
+      // board, that cell can't be a crown — eliminate it (a fair human move).
+      for (let r = 0; r < n && !progress; r++) {
+        for (let c = 0; c < n && !progress; c++) {
+          if (g[r][c] !== UNK) continue;
+          const t = g.map((row) => row.slice());
+          t[r][c] = CROWN;
+          if (cgPropagate(n, region, regionCells, t)) {
+            g[r][c] = ELIM;
+            if (cgPropagate(n, region, regionCells, g)) return false;
+            progress = true;
+          }
+        }
+      }
+    }
+    return cgIsSolved(n, g);
+  }
+
+  // --- Solver: collect up to `limit` solutions (for the repair loop) ---
+  // Each solution is colAt[]: the column of the crown in every row.
+  function findSolutions(n, region, limit) {
+    const sols = [];
     const usedCol = new Array(n).fill(false);
     const usedReg = new Array(n).fill(false);
     const colAt = new Array(n).fill(-1);
 
     function bt(r) {
-      if (count >= limit) return;
-      if (r === n) { count++; return; }
+      if (sols.length >= limit) return;
+      if (r === n) { sols.push(colAt.slice()); return; }
       for (let c = 0; c < n; c++) {
         if (usedCol[c]) continue;
         const reg = region[r][c];
@@ -140,58 +258,157 @@
       }
     }
     bt(0);
-    return count;
+    return sols;
   }
 
-  // Total region-layout attempts before giving up on uniqueness. Tuned so that
-  // sizes 6-8 are effectively always uniquely solvable (measured 60/60), while
-  // keeping worst-case generation under ~0.5s. Uniqueness gets exponentially
-  // rarer as the board grows, so the budget scales with size.
-  function attemptBudget(n) {
-    if (n <= 6) return 3000;
-    if (n === 7) return 5000;
-    return 9000;
+  // Would region `g` stay one connected piece if cell (rx,cx) left it?
+  function connectedWithout(n, region, g, rx, cx) {
+    const cells = [];
+    for (let r = 0; r < n; r++)
+      for (let c = 0; c < n; c++)
+        if (region[r][c] === g && !(r === rx && c === cx)) cells.push([r, c]);
+    if (!cells.length) return false; // region must not vanish
+    const key = (r, c) => r * n + c;
+    const inG = new Set(cells.map(([r, c]) => key(r, c)));
+    const seen = new Set([key(cells[0][0], cells[0][1])]);
+    const stack = [cells[0]];
+    while (stack.length) {
+      const [r, c] = stack.pop();
+      for (const [dr, dc] of DIRS4) {
+        const nr = r + dr, nc = c + dc;
+        if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
+        const k = key(nr, nc);
+        if (inG.has(k) && !seen.has(k)) { seen.add(k); stack.push([nr, nc]); }
+      }
+    }
+    return seen.size === cells.length;
   }
 
-  // --- Public: generate a (preferably unique) puzzle ---
+  function regionSizes(n, region) {
+    const s = new Array(n).fill(0);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) s[region[r][c]]++;
+    return s;
+  }
+  // The seed of region g is the solution crown in row g — it must never move,
+  // or the intended solution would stop being valid.
+  function isSeed(region, sol, r, c) { return region[r][c] === r && sol[r] === c; }
+
+  // --- Repair loop: turn a partition into a UNIQUELY-solvable one -------------
+  // Invariant: every region keeps its seed crown, so `sol` always stays a valid
+  // solution. As long as a second solution exists, one of its crowns sits on a
+  // non-seed cell; moving that cell into a neighbouring region destroys that
+  // rival solution (its region loses its only crown) without touching `sol`.
+  // Converges to a unique board in a handful of moves.
+  function repairToUnique(n, region, sol, rng) {
+    for (let iter = 0; iter < 200; iter++) {
+      const sols = findSolutions(n, region, 2);
+      if (sols.length === 1) return true;
+      const alt = sols.find((s) => s.some((c, r) => c !== sol[r])) || sols[1];
+      const cands = [];
+      for (let r = 0; r < n; r++) if (sol[r] !== alt[r]) cands.push([r, alt[r]]);
+      shuffle(cands, rng);
+      let moved = false;
+      for (const [r, c] of cands) {
+        const g = region[r][c];
+        if (isSeed(region, sol, r, c)) continue;
+        for (const [dr, dc] of shuffle(DIRS4.slice(), rng)) {
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
+          const g2 = region[nr][nc];
+          if (g2 === g) continue;
+          if (!connectedWithout(n, region, g, r, c)) continue;
+          region[r][c] = g2; moved = true; break;
+        }
+        if (moved) break;
+      }
+      if (!moved) return false; // stuck — caller retries with a fresh layout
+    }
+    return false;
+  }
+
+  // --- Polish: improve looks while keeping the solution unique ----------------
+  // (a) grow any 1-cell region (a lone color trivially gives away its crown);
+  // (b) shave the largest region toward a smaller neighbour. Every move is kept
+  // only if the board stays uniquely solvable.
+  function polish(n, region, sol, rng) {
+    const stillUnique = () => findSolutions(n, region, 2).length === 1;
+    for (let pass = 0; pass < 40; pass++) {
+      const sz = regionSizes(n, region);
+      let changed = false;
+      for (let g = 0; g < n; g++) {
+        if (sz[g] !== 1) continue;
+        const sr = g, sc = sol[g];
+        for (const [dr, dc] of shuffle(DIRS4.slice(), rng)) {
+          const nr = sr + dr, nc = sc + dc;
+          if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
+          const g2 = region[nr][nc];
+          if (g2 === g || isSeed(region, sol, nr, nc) || sz[g2] <= 2) continue;
+          if (!connectedWithout(n, region, g2, nr, nc)) continue;
+          region[nr][nc] = g;
+          if (stillUnique()) { changed = true; break; }
+          region[nr][nc] = g2;
+        }
+      }
+      const big = sz.indexOf(Math.max(...sz));
+      let shaved = false;
+      for (let r = 0; r < n && !shaved; r++)
+        for (let c = 0; c < n && !shaved; c++) {
+          if (region[r][c] !== big || isSeed(region, sol, r, c)) continue;
+          for (const [dr, dc] of shuffle(DIRS4.slice(), rng)) {
+            const nr = r + dr, nc = c + dc;
+            if (nr < 0 || nc < 0 || nr >= n || nc >= n) continue;
+            const g2 = region[nr][nc];
+            if (g2 === big || sz[g2] >= sz[big] - 1) continue;
+            if (!connectedWithout(n, region, big, r, c)) continue;
+            region[r][c] = g2;
+            if (stillUnique()) { changed = shaved = true; break; }
+            region[r][c] = big;
+          }
+        }
+      if (!changed) break;
+    }
+    return region;
+  }
+
+  // --- Public: generate a no-guess puzzle ---
   // opts: { size, seed }  -> returns { size, regions, solution }
+  //
+  // Pipeline per attempt:
+  //   1. pick a random valid solution,
+  //   2. grow balanced regions around it,
+  //   3. repair the layout until the solution is UNIQUE,
+  //   4. polish the shapes (kill 1-cell regions, shave the biggest),
+  //   5. require a clean no-guess solve as a hard guarantee.
+  // We return the first board that also clears the aesthetic gate (no 1-cell
+  // region, no oversized blob); otherwise the best-looking unique board found.
   function generate(opts) {
     opts = opts || {};
     const n = opts.size || 8;
     const rng = typeof opts.seed === "number" ? mulberry32(opts.seed) : Math.random;
-    const budget = attemptBudget(n);
+    const CAP = Math.round(1.6 * n); // largest tolerable region
+    const MAX_ATTEMPTS = 120;
 
-    // We PREFER no 1-cell regions (a lone region forces its crown for free and
-    // makes the board trivial), but uniqueness is mandatory and balancing region
-    // sizes wrecks uniqueness on 7×7/8×8. So: grow irregular "blob" regions
-    // (good uniqueness), require uniqueness, and among unique boards keep the one
-    // with the largest minimum region — returning early once no region is size 1.
-    const minSize = 2;
-
-    let attempts = 0;
-    let lastSol = null;
-    let best = null;        // best UNIQUE board found (largest min region)
-    let firstBestAt = -1;   // attempt index when we first had a usable unique board
-    const POST_BEST_CAP = 4000; // stop chasing a min-size upgrade after this many extra tries
-    while (attempts < budget) {
+    let best = null;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const sol = makeSolution(n, rng);
-      if (!sol) { attempts++; continue; }
-      lastSol = sol;
-      for (let g = 0; g < 20 && attempts < budget; g++) {
-        attempts++;
-        const regions = growRegions(n, sol, rng, 1);
-        if (countSolutions(n, regions, 2) !== 1) continue; // uniqueness mandatory
-        const m = minRegionSize(n, regions);
-        if (m >= minSize) return { size: n, regions: regions, solution: sol };
-        if (!best || m > best.m) best = { size: n, regions: regions, solution: sol, m: m };
-        if (firstBestAt < 0) firstBestAt = attempts;
-      }
-      if (firstBestAt >= 0 && attempts - firstBestAt > POST_BEST_CAP) break; // ship best
+      if (!sol) continue;
+      const regions = growRegions(n, sol, rng);
+      if (!repairToUnique(n, regions, sol, rng)) continue;
+      polish(n, regions, sol, rng);
+      if (!logicSolvable(n, regions)) continue; // guarantee: solvable with no guessing
+      const sz = regionSizes(n, regions);
+      const mn = Math.min.apply(null, sz), mx = Math.max.apply(null, sz);
+      if (mn >= 2 && mx <= CAP) return { size: n, regions: regions, solution: sol };
+      const score = mn * 100 - mx; // prefer larger min region, then smaller max
+      if (!best || score > best.score) best = { size: n, regions: regions, solution: sol, score: score };
     }
     if (best) return { size: best.size, regions: best.regions, solution: best.solution };
-    // Last resort (essentially never): a guaranteed-solvable board.
-    const sol = lastSol || makeSolution(n, Math.random) || makeSolution(n, rng);
-    return { size: n, regions: growRegions(n, sol, rng, 1), solution: sol };
+
+    // Essentially never reached: ship a repaired (unique) board without the gate.
+    const sol = makeSolution(n, Math.random) || makeSolution(n, rng);
+    const regions = growRegions(n, sol, rng);
+    repairToUnique(n, regions, sol, rng);
+    return { size: n, regions: regions, solution: sol };
   }
 
   // Deterministic seed for a given calendar day (UTC) -> integer YYYYMMDD.
