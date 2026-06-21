@@ -11,11 +11,67 @@
 (function () {
   "use strict";
 
-  // 10-color palette for regions — vivid but light enough for dark glyphs to read.
+  // 10 well-separated region colors — light enough for dark glyphs to read.
+  // Hand-spread across the wheel (red→orange→yellow→lime→teal→sky→blue→violet→
+  // pink) plus one warm neutral, so no two are an easy-to-confuse near-duplicate.
   const PALETTE = [
-    "#ff8a8a", "#9bd86e", "#7fb4f5", "#ffd84d", "#c293f0",
-    "#ffb066", "#5fd6c4", "#ff9ec9", "#d0d24a", "#74c7f0"
+    "#ff8b8b", // red
+    "#ffb05c", // orange
+    "#f4d23f", // yellow
+    "#9fd45e", // lime
+    "#46cfa6", // teal
+    "#58c4ef", // sky
+    "#7d97f2", // blue
+    "#b98cf0", // violet
+    "#ff8fc6", // pink
+    "#cdb083"  // tan (neutral)
   ];
+
+  // ---- region colouring: keep adjacent regions far apart in colour ----------
+  const PAL_RGB = PALETTE.map((h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+  function colorDist(i, j) { // "redmean" — a cheap perceptual RGB distance
+    const a = PAL_RGB[i], b = PAL_RGB[j];
+    const rm = (a[0] + b[0]) / 2, dr = a[0] - b[0], dg = a[1] - b[1], db = a[2] - b[2];
+    return Math.sqrt((2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db);
+  }
+  // Assign a palette colour to every region so that ADJACENT regions get the
+  // most distinct colours possible (maximise the smallest neighbour contrast).
+  function assignRegionColors(regions, n) {
+    const adj = Array.from({ length: n }, () => new Set());
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      const a = regions[r][c];
+      if (c + 1 < n) { const b = regions[r][c + 1]; if (b !== a) { adj[a].add(b); adj[b].add(a); } }
+      if (r + 1 < n) { const b = regions[r + 1][c]; if (b !== a) { adj[a].add(b); adj[b].add(a); } }
+    }
+    // greedy: most-constrained region first; pick the colour furthest from
+    // already-coloured neighbours, strongly preferring an unused colour.
+    const order = Array.from({ length: n }, (_, i) => i).sort((x, y) => adj[y].size - adj[x].size);
+    const colorOf = new Array(n).fill(-1);
+    const used = new Array(PALETTE.length).fill(0);
+    for (const reg of order) {
+      let best = 0, bestScore = -Infinity;
+      for (let ci = 0; ci < PALETTE.length; ci++) {
+        let minD = Infinity;
+        adj[reg].forEach((nb) => { if (colorOf[nb] >= 0) minD = Math.min(minD, colorDist(ci, colorOf[nb])); });
+        if (minD === Infinity) minD = 1e6;
+        const score = minD - used[ci] * 1e4; // unused colours win ties
+        if (score > bestScore) { bestScore = score; best = ci; }
+      }
+      colorOf[reg] = best; used[best]++;
+    }
+    // local search: swap two regions' colours while it raises the worst neighbour pair.
+    const worst = () => { let w = Infinity; for (let a = 0; a < n; a++) adj[a].forEach((b) => { if (b > a) w = Math.min(w, colorDist(colorOf[a], colorOf[b])); }); return w; };
+    for (let pass = 0; pass < 8; pass++) {
+      let improved = false, cur = worst();
+      for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+        const t = colorOf[a]; colorOf[a] = colorOf[b]; colorOf[b] = t;
+        if (worst() > cur + 1e-6) { cur = worst(); improved = true; }
+        else { const u = colorOf[a]; colorOf[a] = colorOf[b]; colorOf[b] = u; }
+      }
+      if (!improved) break;
+    }
+    return colorOf.map((ci) => PALETTE[ci]);
+  }
 
   // Cell states (user-controlled base layer)
   const EMPTY = 0, MARK = 1, CROWN = 2;
@@ -85,6 +141,7 @@
     state = {
       size: puzzle.size,
       regions: puzzle.regions,
+      regionColor: assignRegionColors(puzzle.regions, puzzle.size),
       solution: puzzle.solution,
       marks: Array.from({ length: puzzle.size }, () => new Array(puzzle.size).fill(EMPTY)),
       auto: Array.from({ length: puzzle.size }, () => new Array(puzzle.size).fill(false)),
@@ -115,7 +172,7 @@
         cell.className = "cell";
         cell.dataset.r = r;
         cell.dataset.c = c;
-        cell.style.background = PALETTE[state.regions[r][c] % PALETTE.length];
+        cell.style.background = state.regionColor[state.regions[r][c]];
         cell.setAttribute("aria-label", "row " + (r + 1) + " column " + (c + 1));
         board.appendChild(cell);
       }
