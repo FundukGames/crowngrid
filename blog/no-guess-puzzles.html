@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7955768025744255" crossorigin="anonymous"></script>
+  <title>How We Make Puzzles That Never Need a Guess | Funduk Games</title>
+  <meta name="description" content="A look behind the scenes at how every Funduk Games logic puzzle is generated to have a single solution you can reach by pure deduction — no guessing, ever. Featuring CrownGrid, Sudoku, SunMoon and Trail." />
+  <meta name="theme-color" content="#0f1226" />
+  <link rel="canonical" href="https://fundukgames.com/blog/no-guess-puzzles.html" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../index.html"><span class="crown">🌰</span> Funduk Games</a>
+    <nav class="nav">
+      <a href="../">All games</a>
+      <a href="index.html">Blog</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="section">
+      <h1>How We Make Puzzles That Never Need a Guess</h1>
+      <p><em>Dev notes · June 2026</em></p>
+      <p>If there's one promise we make about every logic puzzle on Funduk Games, it's this: you can
+      always reach the answer by <strong>reasoning</strong>, never by guessing. No "try this and see if
+      it blows up later," no lucky coin-flips. It sounds simple, but guaranteeing it is the hardest —
+      and most important — part of generating a good puzzle. Here's how we do it.</p>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>Why "no guessing" matters</h2>
+      <p>A puzzle that forces a guess isn't really a puzzle — it's a maze with a hidden trapdoor. You
+      can do everything right, hit a wall, and only progress by picking a branch at random. That feels
+      terrible, and worse, it means the puzzle had more than one path (or you got lucky). A puzzle with
+      a <strong>single solution reachable by logic</strong> respects your time: every step is earned,
+      and the satisfying "click" at the end is yours, not the dice's.</p>
+
+      <h2>The core idea: generate, then prove</h2>
+      <p>Most of our generators follow the same two-beat rhythm. First we <strong>build a candidate
+      board</strong> — a layout plus a valid solution. Then, crucially, we run a
+      <strong>logic solver</strong> over it that is only allowed to use real deduction techniques — the
+      same moves a human would make. If the solver can finish the board start-to-end with no guessing,
+      we keep it. If it gets stuck and would have to branch, we throw the board away (or repair it) and
+      try again. The board you play is one that <em>provably</em> survives a no-guess solve.</p>
+      <p>This is the opposite of just "make sure there's one solution." A board can have exactly one
+      solution and still require guessing to find it. We test for the stronger property: solvable by
+      pure logic.</p>
+
+      <h2>How each game does it</h2>
+      <ul>
+        <li><strong><a href="../crowngrid/play.html">CrownGrid</a></strong> grows coloured regions
+        around a hidden solution, then runs a repair loop: it checks that the board is both unique and
+        logically solvable, and reshapes regions until it is — while also avoiding ugly one-cell
+        regions and oversized blobs.</li>
+        <li><strong><a href="../sudoku/play.html">Sudoku</a></strong> goes a step further and
+        <em>grades</em> difficulty by which human techniques the solver needed: scanning and singles
+        for Easy, naked/hidden pairs for Medium, pointing pairs and box/line reduction for Hard. The
+        difficulty label is earned by the logic, not faked by removing more digits.</li>
+        <li><strong><a href="../sunmoon/play.html">SunMoon</a></strong> only ships boards a deductive
+        solver can crack using the no-three-in-a-row, balance and = / ✕ rules together — so you never
+        have to gamble on a 50/50.</li>
+        <li><strong><a href="../trail/play.html">Trail</a></strong> guarantees a single continuous path
+        that visits every cell, so the "one line" you're hunting for is the only one that exists.</li>
+      </ul>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>The cost (and why it's worth it)</h2>
+      <p>This approach is expensive. We sometimes generate and discard dozens of boards before one
+      clears the no-guess bar, and the solver runs in full on every attempt. But the payoff is a stack
+      of puzzles you can trust: hit a wall, and the next deduction is always there to be found. That
+      trust is the whole product.</p>
+
+      <p>Want to put it to the test? Every board is free and unlimited, with a daily challenge too.</p>
+      <p style="margin-top:20px;"><a class="cta" href="../crowngrid/play.html">▶ Play a no-guess puzzle</a></p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Funduk Games ·
+       <a href="../">Games</a> · <a href="index.html">Blog</a> ·
+       <a href="../about.html">About</a> · <a href="../contact.html">Contact</a> ·
+       <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a> ·
+       <a href="https://www.patreon.com/Funduk" target="_blank" rel="noopener">Patreon</a></p>
+    <p class="disclaimer">
+      Funduk Games' titles are independent products and not affiliated with any other publisher.
+      All names and trademarks belong to their respective owners.
+    </p>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

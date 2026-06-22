@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7955768025744255" crossorigin="anonymous"></script>
+  <title>Why I'm Building Funduk Games (the honest version) | Funduk Games</title>
+  <meta name="description" content="The honest story behind Funduk Games — why a developer who builds AI agents is making free browser puzzle games, what AI tools can and can't do, and the plan to make it sustainable." />
+  <meta name="theme-color" content="#0f1226" />
+  <link rel="canonical" href="https://fundukgames.com/blog/why-funduk-games.html" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../index.html"><span class="crown">🌰</span> Funduk Games</a>
+    <nav class="nav">
+      <a href="../">All games</a>
+      <a href="index.html">Blog</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="section">
+      <h1>Why I'm Building Funduk Games (the honest version)</h1>
+      <p><em>Founder's notes · June 2026</em></p>
+      <p>I build AI agents for a living, and for a long time I wanted to make games on the side without
+      ever quite starting. What finally pushed me over the edge was watching the tools get good enough
+      that one person could realistically ship a polished little game. So I started — and I want to be
+      honest here about how it's actually going, not the highlight reel.</p>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>What AI tools really do (and don't)</h2>
+      <p>The hype says AI writes your game for you. The reality is more interesting. AI can do an
+      enormous amount of the work — and it can also confidently faceplant: it writes code that
+      <em>looks</em> right and isn't. Catching those failures takes real domain knowledge. The tools
+      didn't replace the craft; they raised the ceiling on what a solo developer can attempt, as long
+      as you actually understand what you're shipping. Most of these dev notes are about exactly that
+      gap between "looks done" and "is done."</p>
+
+      <h2>Why browser games, not mobile</h2>
+      <p>My first instinct was the obvious one: quick casual mobile games. Then I looked at the market.
+      Mobile is brutal without a marketing budget — you're a needle hoping someone trips over you in
+      the haystack, competing against studios that spend more on ads in a day than I'll make in a year.
+      The web is different. A free browser game can be found through search, linked, and played
+      instantly with no install friction. For a solo dev with patience instead of a budget, that's a
+      far fairer fight — so Funduk Games lives on the open web, free and no-login.</p>
+
+      <h2>The plan</h2>
+      <p>I'm not pretending this is an overnight thing. The plan is deliberately slow and three-legged:</p>
+      <ol class="steps">
+        <li><strong>Build a browser games site</strong> — a growing library of free, genuinely good
+        puzzle games (this site), leaning on the web's discoverability instead of an ad budget.</li>
+        <li><strong>Build something with recurring revenue</strong> — a SaaS product on the side, so
+        the whole thing isn't riding on ad pennies alone.</li>
+        <li><strong>Write the journey down</strong> — these honest dev notes, including the flops, so
+        the process is useful to someone else (and keeps me accountable).</li>
+      </ol>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>What you can play right now</h2>
+      <p>So far the library is live and growing: <a href="../crowngrid/play.html">CrownGrid</a>,
+      <a href="../sudoku/play.html">Sudoku</a>, <a href="../sunmoon/play.html">SunMoon</a>,
+      <a href="../trail/play.html">Trail</a>, three classic Solitaires, and the odd one out —
+      <a href="../nutfall/play.html">Nutfall</a>, a 3D nut-dropping arcade game. Every logic puzzle is
+      generated to be solvable by pure deduction, because shipping fair puzzles is the part I refuse to
+      cut corners on.</p>
+      <p>If you want the longer, messier version of this story — and the running log of what works and
+      what flops — I post it on <a href="https://www.patreon.com/Funduk" target="_blank" rel="noopener">Patreon</a>.</p>
+
+      <p style="margin-top:20px;"><a class="cta" href="../">▶ Browse the games</a></p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Funduk Games ·
+       <a href="../">Games</a> · <a href="index.html">Blog</a> ·
+       <a href="../about.html">About</a> · <a href="../contact.html">Contact</a> ·
+       <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a> ·
+       <a href="https://www.patreon.com/Funduk" target="_blank" rel="noopener">Patreon</a></p>
+    <p class="disclaimer">
+      Funduk Games' titles are independent products and not affiliated with any other publisher.
+      All names and trademarks belong to their respective owners.
+    </p>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

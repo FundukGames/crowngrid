@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7955768025744255" crossorigin="anonymous"></script>
+  <title>Building Nutfall's Tornado: From Flat Sprites to a GPU Vortex | Funduk Games</title>
+  <meta name="description" content="A dev log on building the tornado funnel in Nutfall — why flat sprites and emoji looked cheap, how a raymarched volumetric shader fixed it, and how we got it from 19fps to a smooth 60fps with six on screen." />
+  <meta name="theme-color" content="#0f1226" />
+  <link rel="canonical" href="https://fundukgames.com/blog/nutfall-tornado-devlog.html" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="../index.html"><span class="crown">🌰</span> Funduk Games</a>
+    <nav class="nav">
+      <a href="../">All games</a>
+      <a href="index.html">Blog</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="section">
+      <h1>Building Nutfall's Tornado: From Flat Sprites to a GPU Vortex</h1>
+      <p><em>Dev notes · June 2026</em></p>
+      <p><a href="../nutfall/play.html">Nutfall</a> has a modifier called the <strong>funnel</strong>: a
+      swirling vortex that pulls falling nuts toward its column. On paper, simple. Making it actually
+      <em>look</em> like a tornado — and run fast enough to have several on screen at once — turned into
+      one of the more stubborn problems of the whole game. Here's the journey.</p>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>The cheap attempts</h2>
+      <p>The first tries were all variations on "fake it with a texture." A flat cone mesh with a
+      swirl texture looked like a paper party hat. An emoji 🌪 sprite was instantly readable but
+      obviously a sticker, not part of the 3D scene. A particle system of little glowing dots read as
+      "a spray of confetti," and when we tightened it into a column it became a wavy ribbon — more
+      smoke-signal than storm. Each version was a little better, and each one still looked, in the
+      bluntest possible review, <em>bad</em>.</p>
+
+      <h2>The fix: raymarch the smoke</h2>
+      <p>The thing that finally worked was a <strong>raymarched volumetric shader</strong>. Instead of
+      drawing an object, the GPU marches a ray through a procedural "density field" shaped like a
+      funnel — narrow rope at the bottom, billowing wall-cloud at the top — carved by animated noise so
+      it churns and swirls, with a quick lighting pass so it has a bright side and a shadow side. That
+      gives real volume: the smoke looks like it has depth because, mathematically, it does.</p>
+
+      <h2>The lesson about working with AI tools</h2>
+      <p>We build a lot of this with AI coding assistants, and the tornado was a clean experiment in how
+      to use them well. We tried three ways to ask for the effect: a vague request (with some choice
+      words thrown at the AI when it missed), a precise technical brief that named the exact technique,
+      and a "maximum effort" mode left to figure it out itself. The precise brief won by a mile — it
+      reached a good result in a fraction of the time and compute. The takeaway isn't "AI is magic" or
+      "AI is useless"; it's that <strong>knowing the underlying tech</strong> — that the answer was a
+      raymarch shader, not another sprite — is what lets you get there quickly. The tool is fast; the
+      direction has to come from understanding.</p>
+
+      <!-- AD SLOT -->
+      <div class="ad-slot">Ad space — your AdSense unit goes here</div>
+
+      <h2>Making it fast</h2>
+      <p>Beautiful and unusable is still unusable. The first full-screen version ran at about
+      <strong>19fps</strong> — fine for a tech demo, a dealbreaker for a casual game that should be
+      smooth on a phone. So we optimised hard:</p>
+      <ul>
+        <li>dropped the noise from 5 octaves to 3 (plenty for soft smoke);</li>
+        <li>replaced the expensive self-shadow sampling with a cheap approximate one, and only ran it
+        on the dense parts;</li>
+        <li>cut the number of ray steps and rendered the effect at a slightly lower resolution;</li>
+        <li>and stopped drawing it full-screen — each funnel is now a small camera-facing quad, so the
+        shader only runs on the pixels it actually occupies.</li>
+      </ul>
+      <p>The result: a smooth <strong>60fps</strong>, holding up even with six tornadoes on the board at
+      once (the march quality scales down gracefully as you add more). Same look, a fraction of the
+      cost.</p>
+
+      <h2>The real takeaway</h2>
+      <p>Two things made the difference. First, <strong>look at what you're shipping</strong> — we kept
+      rendering frames and judging them honestly until the effect actually read as a tornado, instead
+      of trusting that the code "should" look right. Second, pick the <strong>right technique</strong>
+      early: no amount of polish was going to make the sprite version great, but the raymarch approach
+      was good almost immediately and just needed tuning.</p>
+
+      <p style="margin-top:20px;"><a class="cta" href="../nutfall/play.html">▶ See the tornado in Nutfall</a></p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Funduk Games ·
+       <a href="../">Games</a> · <a href="index.html">Blog</a> ·
+       <a href="../about.html">About</a> · <a href="../contact.html">Contact</a> ·
+       <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a> ·
+       <a href="https://www.patreon.com/Funduk" target="_blank" rel="noopener">Patreon</a></p>
+    <p class="disclaimer">
+      Funduk Games' titles are independent products and not affiliated with any other publisher.
+      All names and trademarks belong to their respective owners.
+    </p>
+  </footer>
+
+  <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
+</body>
+</html>

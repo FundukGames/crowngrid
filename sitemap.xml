@@ -171,6 +171,21 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://fundukgames.com/blog/why-funduk-games.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fundukgames.com/blog/nutfall-tornado-devlog.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fundukgames.com/blog/no-guess-puzzles.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://fundukgames.com/blog/freecell-strategy.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
