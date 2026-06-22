@@ -171,6 +171,16 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://fundukgames.com/blog/freecell-strategy.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://fundukgames.com/blog/what-are-idle-games.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://fundukgames.com/blog/games-like-wordle.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
